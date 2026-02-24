@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>清淨講堂座位圖</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      font-family: 'Microsoft JhengHei', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .header {
+      background: rgba(255, 255, 255, 0.98);
+      padding: 15px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      flex-shrink: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      color: #667eea;
+      font-size: 1.3em;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .date-badge {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 15px;
+      font-size: 0.85em;
+      font-weight: 500;
+    }
+
+    .content-wrapper {
+      flex: 1;
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background: white;
+      position: relative;
+    }
+
+
+    .sheet-container {
+      width: 1100px;
+      height: 2000px;
+      /* 足夠高度讓表格完整顯示，JS 會再調整 */
+      position: relative;
+      transform-origin: top left;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: #667eea;
+      z-index: 10;
+    }
+
+    .loading-spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* 手機 */
+    @media (max-width: 767px) {
+      .header h1 {
+        font-size: 1.1em;
+      }
+
+      .date-badge {
+        font-size: 0.75em;
+        padding: 5px 10px;
+      }
+    }
+
+    /* 手機橫向 */
+    @media (max-width: 767px) and (orientation: landscape) {
+      .header {
+        padding: 8px 15px;
+      }
+
+      .header h1 {
+        font-size: 1em;
+      }
+    }
+
+    /* 平板 */
+    @media (min-width: 768px) and (max-width: 1023px) {
+      .header h1 {
+        font-size: 1.6em;
+      }
+
+      .date-badge {
+        font-size: 0.95em;
+        padding: 8px 15px;
+      }
+    }
+
+    /* 電腦版 */
+    @media (min-width: 1024px) {
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
+      }
+
+      .header {
+        padding: 20px 25px;
+      }
+
+      .header h1 {
+        font-size: 2em;
+      }
+
+      .date-badge {
+        font-size: 1em;
+        padding: 8px 16px;
+      }
+
+      .sheet-container {
+        width: 100%;
+        height: 100%;
+        transform: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🧘 清淨講堂座位圖</h1>
+      <span class="date-badge" id="dateDisplay"></span>
+    </div>
+
+    <div class="content-wrapper">
+      <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+        <p>載入中...</p>
+      </div>
+      <div class="sheet-container" id="sheetContainer">
+        <iframe id="seatChart"
+          src="https://docs.google.com/spreadsheets/d/e/2PACX-1vRpC3XL1eTQUzjSwbqPSz2kaaAhh0TGoM3mmlohQH3z5PF976QhlcAg_2vxjWn7ZSQEh_nYFlUMToad/pubhtml?gid=2011556436&single=true&widget=true&headers=false&chrome=false&range=A1:Q38&rm=minimal"
+          onload="hideLoading()" title="夜初班清淨講堂座位圖" allow="fullscreen">
+        </iframe>
+      </div>
+    </div>
+
+
+  </div>
+
+  <script>
+    // 顯示最近的下一個周三日期（如果今天是周三就顯示今天）
+    function updateDate() {
+      const now = new Date();
+      const currentDay = now.getDay();
+
+      let nextWednesday = new Date(now);
+
+      if (currentDay === 3) {
+        nextWednesday = now;
+      } else if (currentDay < 3) {
+        nextWednesday.setDate(now.getDate() + (3 - currentDay));
+      } else {
+        nextWednesday.setDate(now.getDate() + (7 - currentDay + 3));
+      }
+
+      const dateStr = nextWednesday.toLocaleDateString('zh-TW', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        weekday: 'short'
+      });
+      document.getElementById('dateDisplay').textContent = dateStr;
+    }
+
+    // 隱藏載入動畫
+    function hideLoading() {
+      setTimeout(() => {
+        const loading = document.getElementById('loading');
+        if (loading) {
+          loading.style.display = 'none';
+        }
+      }, 800);
+    }
+
+    // 自動縮放以符合螢幕寬度
+    const SHEET_WIDTH = 1100;
+
+    function adjustScale() {
+      const container = document.getElementById('sheetContainer');
+      const wrapper = document.querySelector('.content-wrapper');
+      if (!container || !wrapper) return;
+
+      const screenWidth = wrapper.clientWidth;
+
+      if (screenWidth < 1024) {
+        const scale = screenWidth / SHEET_WIDTH;
+        container.style.transform = `scale(${scale})`;
+        // 補償縮放後的高度，讓垂直捲動正常
+        container.style.height = `${2000}px`;
+        wrapper.style.height = '';
+      } else {
+        container.style.transform = 'none';
+        container.style.width = '100%';
+        container.style.height = '100%';
+      }
+    }
+
+    // 初始化
+    updateDate();
+    adjustScale();
+
+    window.addEventListener('resize', () => {
+      clearTimeout(window._resizeTimer);
+      window._resizeTimer = setTimeout(adjustScale, 150);
+    });
+    window.addEventListener('orientationchange', () => setTimeout(adjustScale, 300));
+    setInterval(updateDate, 60000);
+  </script>
+</body>
+
+</html>
