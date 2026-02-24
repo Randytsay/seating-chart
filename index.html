@@ -61,8 +61,7 @@
 
     .content-wrapper {
       flex: 1;
-      overflow-x: hidden;
-      overflow-y: auto;
+      overflow: auto;
       -webkit-overflow-scrolling: touch;
       background: white;
       position: relative;
@@ -245,10 +244,9 @@
 
     function adjustScale() {
       const container = document.getElementById('sheetContainer');
-      const wrapper = document.querySelector('.content-wrapper');
-      if (!container || !wrapper) return;
+      if (!container) return;
 
-      const screenWidth = wrapper.clientWidth;
+      const screenWidth = window.innerWidth;
 
       if (screenWidth < 1024) {
         const scale = screenWidth / SHEET_WIDTH;
