@@ -18,9 +18,6 @@
       width: 100%;
       height: 100%;
       font-family: 'Microsoft JhengHei', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
-    }
-
-    body {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
 
@@ -31,42 +28,24 @@
       flex-direction: column;
     }
 
-    .header {
-      background: rgba(255, 255, 255, 0.98);
-      padding: 15px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      flex-shrink: 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .header h1 {
-      color: #667eea;
-      font-size: 1.3em;
-      font-weight: 600;
-      margin: 0;
-    }
-
-    .date-badge {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 6px 12px;
-      border-radius: 15px;
-      font-size: 0.85em;
-      font-weight: 500;
-    }
-
     .content-wrapper {
       flex: 1;
-      overflow: auto;
-      -webkit-overflow-scrolling: touch;
+      overflow-x: hidden;
+      overflow-y: auto;
       background: white;
+      -webkit-overflow-scrolling: touch;
+      position: relative;
+    }
+
+    #sheetWrapper {
+      margin: 0 auto;
+      overflow: hidden;
     }
 
     .sheet-container {
       width: 730px;
       height: 2600px;
+      transform-origin: top left;
     }
 
     iframe {
@@ -106,60 +85,17 @@
       }
     }
 
-    /* 手機 */
-    @media (max-width: 767px) {
-      .header h1 {
-        font-size: 1.1em;
-      }
-
-      .date-badge {
-        font-size: 0.75em;
-        padding: 5px 10px;
-      }
-    }
-
-    /* 手機橫向 */
-    @media (max-width: 767px) and (orientation: landscape) {
-      .header {
-        padding: 8px 15px;
-      }
-
-      .header h1 {
-        font-size: 1em;
-      }
-    }
-
-    /* 平板 */
-    @media (min-width: 768px) and (max-width: 1023px) {
-      .header h1 {
-        font-size: 1.6em;
-      }
-
-      .date-badge {
-        font-size: 0.95em;
-        padding: 8px 15px;
-      }
-    }
-
     /* 電腦版 */
     @media (min-width: 1024px) {
       .container {
         max-width: 1400px;
         margin: 0 auto;
         box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
+        background: white;
       }
 
-      .header {
-        padding: 20px 25px;
-      }
-
-      .header h1 {
-        font-size: 2em;
-      }
-
-      .date-badge {
-        font-size: 1em;
-        padding: 8px 16px;
+      .content-wrapper {
+        overflow: auto;
       }
 
       .sheet-container {
@@ -172,49 +108,24 @@
 
 <body>
   <div class="container">
-    <div class="header">
-      <h1>🧘 清淨講堂座位圖</h1>
-      <span class="date-badge" id="dateDisplay"></span>
-    </div>
-
     <div class="content-wrapper" id="contentWrapper">
       <div class="loading" id="loading">
         <div class="loading-spinner"></div>
         <p>載入中...</p>
       </div>
-      <div class="sheet-container" id="sheetContainer">
-        <iframe id="seatChart"
-          src="https://docs.google.com/spreadsheets/d/e/2PACX-1vRpC3XL1eTQUzjSwbqPSz2kaaAhh0TGoM3mmlohQH3z5PF976QhlcAg_2vxjWn7ZSQEh_nYFlUMToad/pubhtml?gid=2011556436&single=true&widget=true&headers=false&chrome=false&range=A1:Q38&rm=minimal"
-          onload="hideLoading()" title="夜初班清淨講堂座位圖" allow="fullscreen">
-        </iframe>
+
+      <div id="sheetWrapper">
+        <div class="sheet-container" id="sheetContainer">
+          <iframe id="seatChart"
+            src="https://docs.google.com/spreadsheets/d/e/2PACX-1vRpC3XL1eTQUzjSwbqPSz2kaaAhh0TGoM3mmlohQH3z5PF976QhlcAg_2vxjWn7ZSQEh_nYFlUMToad/pubhtml?gid=2011556436&single=true&widget=true&headers=false&chrome=false&range=A1:Q38&rm=minimal"
+            onload="hideLoading()" title="夜初班清淨講堂座位圖" allow="fullscreen">
+          </iframe>
+        </div>
       </div>
     </div>
   </div>
 
   <script>
-    // 顯示最近的下一個周三日期
-    function updateDate() {
-      const now = new Date();
-      const currentDay = now.getDay();
-      let nextWednesday = new Date(now);
-
-      if (currentDay === 3) {
-        nextWednesday = now;
-      } else if (currentDay < 3) {
-        nextWednesday.setDate(now.getDate() + (3 - currentDay));
-      } else {
-        nextWednesday.setDate(now.getDate() + (7 - currentDay + 3));
-      }
-
-      const dateStr = nextWednesday.toLocaleDateString('zh-TW', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        weekday: 'short'
-      });
-      document.getElementById('dateDisplay').textContent = dateStr;
-    }
-
     // 隱藏載入動畫
     function hideLoading() {
       setTimeout(() => {
@@ -223,37 +134,47 @@
       }, 800);
     }
 
-    // 使用 CSS zoom 讓表格剛好符合螢幕寬度
+    // 使用 CSS transform scale 讓表格剛好符合螢幕寬度，支援各品牌手機
     const SHEET_WIDTH = 730;
+    const SHEET_HEIGHT = 2600;
 
-    function adjustZoom() {
+    function adjustScale() {
       const container = document.getElementById('sheetContainer');
-      if (!container) return;
+      const wrapper = document.getElementById('sheetWrapper');
+      if (!container || !wrapper) return;
 
       const screenWidth = window.innerWidth;
 
       if (screenWidth < SHEET_WIDTH) {
-        // zoom 會同時縮放佈局，不像 transform 只是視覺縮放
-        const zoomLevel = screenWidth / SHEET_WIDTH;
-        container.style.zoom = zoomLevel;
+        // 計算縮放比例
+        const scale = screenWidth / SHEET_WIDTH;
+
+        container.style.transform = `scale(${scale})`;
+        container.style.width = `${SHEET_WIDTH}px`;
+        container.style.height = `${SHEET_HEIGHT}px`;
+
+        // 限制外層大小，避免縮放後產生原比例的空白捲軸空間
+        wrapper.style.width = `${screenWidth}px`;
+        wrapper.style.height = `${SHEET_HEIGHT * scale}px`;
       } else {
-        container.style.zoom = '1';
+        container.style.transform = 'none';
         container.style.width = '100%';
         container.style.height = '100%';
+
+        wrapper.style.width = '100%';
+        wrapper.style.height = '100%';
       }
     }
 
     // 初始化
-    updateDate();
-    adjustZoom();
+    adjustScale();
 
     let resizeTimer;
     window.addEventListener('resize', () => {
       clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(adjustZoom, 150);
+      resizeTimer = setTimeout(adjustScale, 150);
     });
-    window.addEventListener('orientationchange', () => setTimeout(adjustZoom, 300));
-    setInterval(updateDate, 60000);
+    window.addEventListener('orientationchange', () => setTimeout(adjustScale, 300));
   </script>
 </body>
 
