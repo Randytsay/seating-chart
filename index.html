@@ -3,8 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-    content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>清淨講堂座位圖</title>
   <style>
@@ -30,7 +29,6 @@
       height: 100vh;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
     }
 
     .header {
@@ -64,16 +62,11 @@
       overflow: auto;
       -webkit-overflow-scrolling: touch;
       background: white;
-      position: relative;
     }
-
 
     .sheet-container {
       width: 1100px;
-      height: 2000px;
-      /* 足夠高度讓表格完整顯示，JS 會再調整 */
-      position: relative;
-      transform-origin: top left;
+      height: 1800px;
     }
 
     iframe {
@@ -81,9 +74,6 @@
       height: 100%;
       border: none;
       display: block;
-      position: absolute;
-      top: 0;
-      left: 0;
     }
 
     .loading {
@@ -175,7 +165,6 @@
       .sheet-container {
         width: 100%;
         height: 100%;
-        transform: none !important;
       }
     }
   </style>
@@ -188,7 +177,7 @@
       <span class="date-badge" id="dateDisplay"></span>
     </div>
 
-    <div class="content-wrapper">
+    <div class="content-wrapper" id="contentWrapper">
       <div class="loading" id="loading">
         <div class="loading-spinner"></div>
         <p>載入中...</p>
@@ -200,16 +189,13 @@
         </iframe>
       </div>
     </div>
-
-
   </div>
 
   <script>
-    // 顯示最近的下一個周三日期（如果今天是周三就顯示今天）
+    // 顯示最近的下一個周三日期
     function updateDate() {
       const now = new Date();
       const currentDay = now.getDay();
-
       let nextWednesday = new Date(now);
 
       if (currentDay === 3) {
@@ -233,29 +219,25 @@
     function hideLoading() {
       setTimeout(() => {
         const loading = document.getElementById('loading');
-        if (loading) {
-          loading.style.display = 'none';
-        }
+        if (loading) loading.style.display = 'none';
       }, 800);
     }
 
-    // 自動縮放以符合螢幕寬度
+    // 使用 CSS zoom 讓表格剛好符合螢幕寬度
     const SHEET_WIDTH = 1100;
 
-    function adjustScale() {
+    function adjustZoom() {
       const container = document.getElementById('sheetContainer');
       if (!container) return;
 
       const screenWidth = window.innerWidth;
 
-      if (screenWidth < 1024) {
-        const scale = screenWidth / SHEET_WIDTH;
-        container.style.transform = `scale(${scale})`;
-        // 補償縮放後的高度，讓垂直捲動正常
-        container.style.height = `${2000}px`;
-        wrapper.style.height = '';
+      if (screenWidth < SHEET_WIDTH) {
+        // zoom 會同時縮放佈局，不像 transform 只是視覺縮放
+        const zoomLevel = screenWidth / SHEET_WIDTH;
+        container.style.zoom = zoomLevel;
       } else {
-        container.style.transform = 'none';
+        container.style.zoom = '1';
         container.style.width = '100%';
         container.style.height = '100%';
       }
@@ -263,13 +245,14 @@
 
     // 初始化
     updateDate();
-    adjustScale();
+    adjustZoom();
 
+    let resizeTimer;
     window.addEventListener('resize', () => {
-      clearTimeout(window._resizeTimer);
-      window._resizeTimer = setTimeout(adjustScale, 150);
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(adjustZoom, 150);
     });
-    window.addEventListener('orientationchange', () => setTimeout(adjustScale, 300));
+    window.addEventListener('orientationchange', () => setTimeout(adjustZoom, 300));
     setInterval(updateDate, 60000);
   </script>
 </body>
